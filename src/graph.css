@@ -1,0 +1,136 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box; /* Все размеры элементов будут учитывать padding и border */
+}
+
+/* Основные стили для контейнера */
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    height: 100vh; /* Полная высота экрана */
+    width: 100%; /* Убедитесь, что контейнер занимает всю ширину */
+    background-color: #e5e0d2; /* Светлый фон */
+    overflow-x: hidden; /* Скрыть горизонтальную прокрутку */
+  }
+  
+  /* Стили для панели кнопок */
+  .button-panel {
+    display: flex;
+    justify-content: space-around; /* Распределение кнопок по горизонтали */
+    width: 100%; /* Ширина панели на всю ширину контейнера */
+    background-color: #007bff; /* Цвет фона панели кнопок */
+  }
+  
+  /* Стили для кнопок */
+  .button {
+    padding: 10px 20px; /* Отступы внутри кнопки */
+    margin: 5px; /* Отступы между кнопками */
+    border: none; /* Убираем рамку */
+    border-radius: 5px; /* Закругленные углы */
+    color: white; /* Цвет текста */
+    background-color: #0056b3; /* Цвет фона кнопки */
+    cursor: pointer; /* Указатель при наведении */
+    transition: background-color 0.3s; /* Плавный переход цвета фона */
+  }
+  
+  .button:hover {
+    background-color: #004494; /* Цвет фона при наведении */
+  }
+  
+  /* Стили для первого текстового окна (сообщения) */
+  .message-box {
+    width: 60%; /* Ширина окна */
+    padding: 10px; /* Отступы внутри окна */
+    margin-top: 10px; /* Отступ сверху от панели кнопок */
+    margin-bottom: 10px; /* Отступ снизу от текстового окна */
+    background-color: #007bff; /* Синий фон, как у панели с кнопками */
+    color: rgb(255, 255, 255); /* Цвет текста черный */
+    border-radius: 5px; /* Закругленные углы */
+    text-align: center; /* Центрирование текста */
+    font-family: Arial, sans-serif; /* Шрифт */
+    font-size: 14px; /* Размер шрифта */
+    white-space: pre-wrap; /* Сохранение пробелов и перенос строк */
+    overflow: hidden; /* Прокрутка не будет отображаться */
+  }
+  
+ /* Стили для второго текстового окна (массив узлов) */
+.message-box-nodes {
+    width: 95%; /* Ширина окна */
+    padding: 10px; /* Отступы внутри окна */
+    margin-top: 10px; /* Отступ сверху от первого текстового окна */
+    margin-bottom: 10px; /* Отступ снизу */
+    background-color: #007bff; /* Светлый фон */
+    color: rgb(255, 255, 255); /* Черный цвет текста */
+    border-radius: 5px; /* Закругленные углы */
+    text-align: left; /* Выравнивание текста по правому краю */
+    font-family: Arial, sans-serif; /* Шрифт */
+    font-size: 12px; /* Размер шрифта */
+    white-space: nowrap; /* Без переноса строки */
+    overflow-y: auto; /* Прокрутка не будет отображаться */
+    text-decoration: none; /* Убираем подчеркивание */
+  }
+  .message-box-edges {
+    width: 95%; /* Ширина окна */
+    padding: 10px; /* Отступы внутри окна */
+    margin-top: 10px; /* Отступ сверху от первого текстового окна */
+    margin-bottom: 10px; /* Отступ снизу */
+    background-color: #007bff; /* Светлый фон */
+    color: rgb(255, 255, 255); /* Черный цвет текста */
+    border-radius: 5px; /* Закругленные углы */
+    text-align: left; /* Выравнивание текста по правому краю */
+    font-family: Arial, sans-serif; /* Шрифт */
+    font-size: 12px; /* Размер шрифта */
+    white-space: nowrap; /* Без переноса строки */
+    overflow-y: auto; /* Прокрутка не будет отображаться */
+    text-decoration: none; /* Убираем подчеркивание */
+  }
+  
+  /* Стили для области графа */
+  .graph-area {
+    width: 80%; /* Ширина области графа */
+    height: 80%; /* Высота области графа (80% от высоты контейнера) */
+    margin-top: 20px; /* Отступ сверху от текстового окна */
+    background-color: #ffffff; /* Белый фон области графа */
+    border: 2px solid #ccc; /* Светло-серая рамка вокруг области графа */
+    border-radius: 5px; /* Закругленные углы области графа */
+    position: relative; /* Позволяет позиционировать узлы внутри этой области */
+  }
+  
+  /* Стили для контейнера с графом */
+  .graph-container {
+    width: 800px;
+    height: 600px;
+    border: 2px solid #ccc;
+    position: relative;
+    background-color: #f9f9f9;
+  }
+  
+  /* Стили для круга (узла) */
+  .node circle {
+    fill: blue;
+  }
+
+  .node-selected {
+    fill: red; /* Красный цвет для выбранных узлов */
+    stroke: white;
+    stroke-width: 2;
+}
+
+  
+  /* Стили для текста внутри узла */
+  .node text {
+    fill: white;
+    font-size: 12px;
+    font-family: Arial, sans-serif;
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+  
+  /* Стили для рёбер */
+.edge {
+    stroke: black;
+    stroke-width: 2;
+}
