@@ -1,0 +1,61 @@
+/* Обертка для модального окна, чтобы затемнить фон */
+.edge-editor-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.5); /* Затемнение фона */
+    padding: 20px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Модальное окно поверх всего */
+    border-radius: 8px;
+}
+
+/* Стилизуем сам контейнер модального окна */
+.edge-editor-content {
+    background: white;
+    padding: 20px;
+    width: 300px; /* Размер модального окна */
+    height: 300px; /* Размер модального окна */
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+
+/* Кнопка закрытия */
+.close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 20px;
+    cursor: pointer;
+    color: #888;
+}
+
+/* 
+
+.edge-editor-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+} */
+
+.edge-editor-content button {
+    background-color: #0056b3;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    position: absolute; /* Абсолютное позиционирование */
+    right: 20px; /* Отступ от правого края */
+    bottom: 20px; /* Отступ от нижнего края */
+    transition: background-color 0.3s ease;
+    width: auto; /* Убираем фиксированную ширину */
+}
