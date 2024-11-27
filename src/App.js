@@ -16,6 +16,7 @@ const App = () => {
     const [isOkClicked, setIsOkClicked] = useState(false);//кликнули через ок или скипнули модальное окно
     const [selectedNode, setSelectedNode] = useState(null);  // Первый узел
     const [secondNode, setSecondNode] = useState(null);     // Второй узел
+    const [isDirected, setIsDirected] = useState(false); //флаг ориентированного ребра
 
     const [message, setMessage] = useState("Нажмите на кнопку для дальнейших действий");
     const svgRef = useRef();
@@ -76,6 +77,8 @@ const App = () => {
         if (deletingNode) {
             setNodes(prevNodes => prevNodes.filter(n => n.id !== nId));
             setEdges(prevEdges => prevEdges.filter(edge => edge.start.id !== nId && edge.end.id !== nId));
+            setMessage("Вы удалили узел и его ребра");
+            setDeletingNode(false);
             }   
         }
     
@@ -85,7 +88,7 @@ const App = () => {
             addNode(e); // Добавление нового узла
             setAddingNode(false); // Сброс флага
         }
-    }  
+    };  
 
     // Добавляем обработчик для клика по рабочей зоне
     const handleCanvasClick = (e) => {
@@ -103,10 +106,8 @@ const App = () => {
                 setMessage("Теперь выберите второй узел.");
             } 
             else if (selectedNode && !secondNode) {
-                console.log("Выбран второй узел:", node); // Выводим второй узел
                 setSecondNode(node);
                 setShowEdgeEditor(true); // Показать модальное окно
-                setMessage("Введите вес для рёбер.");
             } else {
                 // Если оба узла уже выбраны, сбрасываем всё
                 setSelectedNode(node);
@@ -122,44 +123,159 @@ const App = () => {
         setEdgeWeight(e.target.value);
     };
 
-    // Обработчик подтверждения создания ребра
-    const handleOkClick = () => {
+    const orient = () => {
+        console.log("1");
         if (selectedNode && secondNode) {
-            // Создаем строку для идентификатора ребра, используя порядок узлов
+        if (selectedNode.id === secondNode.id) {
+            // Ребро типа a -> a (одинаковые узлы)
+            const edgeExists = edges.some(edge => edge.start.id === selectedNode.id && edge.end.id === selectedNode.id);
+            
+            if (edgeExists) {
+                setMessage("Ребро типа a -> a уже существует.");
+                setSelectedNode(null);
+                setSecondNode(null);
+                setShowEdgeEditor(false);
+                setEdgeWeight("0");
+                return;
+            }
+            
+            // Если ребро не существует, создаем ребро a -> a
+            const newEdge = {
+                id: `${selectedNode.id}-${secondNode.id}`, // Идентификатор для ребра a -> a
+                start: selectedNode,
+                end: secondNode,
+                weight: parseFloat(edgeWeight) || 0, // Вес ребра
+            };
+
+            setEdges(prevEdges => [...prevEdges, newEdge]); // Добавляем новое ребро в список рёбер
+            setMessage("Ребро a -> a создано.");
+        } else {
+            // Ребро между разными узлами (a -> b)
             const edgeId1 = `${selectedNode.id}-${secondNode.id}`;
-    
-            // Проверяем, существует ли уже ребро в любом из направлений
-            const edgeExists = edges.some(edge => 
-                (edge.id === edgeId1) // Проверяем оба возможных идентификатора
-            );
-    
+            const edgeId2 = `${secondNode.id}-${selectedNode.id}`;
+
+            // Проверяем оба направления (a -> b и b -> a)
+            const edgeExists = edges.some(edge => edge.id === edgeId1);
+            
             if (edgeExists) {
                 setMessage("Ребро между этими узлами уже существует.");
                 setSelectedNode(null);
                 setSecondNode(null);
                 setShowEdgeEditor(false);
-                setEdgeWeight("0"); // Сбросить вес
+                setEdgeWeight("0");
+                return;
             }
-    
-            // Если ребро не существует, добавляем новое
+
+            // Если ребро не существует, создаем новое ребро
             const newEdge = {
-                id: edgeId1, // Можно использовать один идентификатор, так как они одинаковы по сути
+                id: edgeId1, // Используем идентификатор для a -> b
                 start: selectedNode,
                 end: secondNode,
-                weight: parseFloat(edgeWeight) || 0, // Преобразуем вес в число или устанавливаем 0, если вес не задан
+                weight: parseFloat(edgeWeight) || 0, // Вес ребра
             };
-            
-            setEdges(prevEdges => [...prevEdges, newEdge]); // Добавляем ребро в список рёбер
-            setMessage("Ребро создано.");
+
+            setEdges(prevEdges => [...prevEdges, newEdge]); // Добавляем новое ребро в список рёбер
+            setMessage("Ребро между узлами создано.");
         }
+    }
     
-        // Сброс состояния узлов после нажатия ОК
-        setSelectedNode(null);
-        setSecondNode(null);
-        setShowEdgeEditor(false);
-        setEdgeWeight("0"); // Сбросить вес
+    // Сброс состояния после создания ребра
+    setSelectedNode(null);
+    setSecondNode(null);
+    setShowEdgeEditor(false);
+    setEdgeWeight("0");
+};
+
+const neorient = () => {
+    console.log("2");
+    if (selectedNode && secondNode) {
+        if (selectedNode.id === secondNode.id) {
+            // Проверка, существует ли уже ребро типа a -> a (между одним и тем же узлом)
+            const edgeExists = edges.some(edge => edge.start.id === selectedNode.id && edge.end.id === selectedNode.id);
+            
+            if (edgeExists) {
+                setMessage("Ребро типа a -> a уже существует.");
+                setSelectedNode(null);
+                setSecondNode(null);
+                setShowEdgeEditor(false);
+                setEdgeWeight("0");
+                return;
+            }
+
+            // Если ребро не существует, создаем ребро a -> a
+            const newEdge = {
+                id: `${selectedNode.id}-${secondNode.id}`, // Идентификатор для ребра a -> a
+                start: selectedNode,
+                end: secondNode,
+                weight: parseFloat(edgeWeight) || 0, // Вес ребра
+            };
+
+            setEdges(prevEdges => [...prevEdges, newEdge]); // Добавляем новое ребро в список рёбер
+            setMessage("Ребро a -> a создано.");
+        
+            
+            // Переключаем флаг isDirected на противоположный
+            setIsDirected(prev => !prev);
+
+            // Сброс состояния после добавления ребра
+            setSelectedNode(null);
+            setSecondNode(null);
+            setShowEdgeEditor(false);
+            setEdgeWeight("0");
+        }
+        else if (selectedNode.id !== secondNode.id) {
+                // Ребро между разными узлами a -> b
+                const edgeId1 = `${selectedNode.id}-${secondNode.id}`;  // a -> b
+                const edgeId2 = `${secondNode.id}-${selectedNode.id}`;  // b -> a
+    
+                // Проверяем существование рёбер a -> b и b -> a
+                const edgeExists = edges.some(edge => edge.id === edgeId1 || edge.id === edgeId2);
+                
+                if (edgeExists) {
+                    setMessage("Одно из рёбер между этими узлами уже существует.");
+                    setSelectedNode(null);
+                    setSecondNode(null);
+                    setShowEdgeEditor(false);
+                    setEdgeWeight("0");
+                    return;
+                }
+    
+                // Если рёбер еще нет, создаем оба: a -> b и b -> a
+                const newEdge1 = {
+                    id: edgeId1,  // Идентификатор для a -> b
+                    start: selectedNode,
+                    end: secondNode,
+                    weight: parseFloat(edgeWeight) || 0,  // Вес ребра
+                };
+    
+                const newEdge2 = {
+                    id: edgeId2,  // Идентификатор для b -> a
+                    start: secondNode,
+                    end: selectedNode,
+                    weight: parseFloat(edgeWeight) || 0,  // Вес ребра
+                };
+    
+                // Добавляем оба рёбер в список
+                setEdges(prevEdges => [...prevEdges, newEdge1, newEdge2]);  
+                setMessage("Рёбра между узлами a -> b и b -> a созданы.");
+                
+                // Переключаем флаг isDirected на противоположный
+                setIsDirected(prev => !prev);
+    
+                // Сброс состояния после добавления рёбер
+                setSelectedNode(null);
+                setSecondNode(null);
+                setShowEdgeEditor(false);
+                setEdgeWeight("0");
+            }    
+        }
     };
 
+    const handleOkClick = () => 
+        {
+            isDirected ? neorient() : orient();
+        };
+    
     const handleClose = () => {
         // Сбрасываем выбранные узлы
         setSelectedNode(null);
@@ -237,30 +353,51 @@ const App = () => {
                 <button className="button" onClick={startAddingNode}>Добавить узел</button>
                 <button className="button" onClick={startDeletingNode}>Удалить узел</button>
                 <button className="button" onClick={startAddingEdge}>Соединить узлы</button>
+                <button className="button">Алгоритмы</button>
             </div>
             <div className="message-box">{message}</div>
             {showEdgeEditor && (
               <div className="edge-editor-modal">
-                    <div className="edge-editor-content">
-                        <span className="close-button" onClick = {handleClose}>
-                            &times;</span>
-                        <h3>Редактор ребра</h3>
-                        <label>Вес ребра:</label>
-                        <input 
-                            type="text" 
-                            value={edgeWeight} 
-                            onChange={handleWeightChange} 
-                            placeholder="Введите вес" 
-                        />
-                        <div>
-                            <label>Ориентированный</label>
-                            {/* <input type="radio" name="direction" value="directed" defaultChecked onChange={() => setIsDirected(true)} /> */}
-                            <label>Неориентированный</label>
-                            {/* <input type="radio" name="direction" value="undirected" onChange={() => setIsDirected(false)} /> */}
-                        </div>
-                        <button onClick={handleOkClick}>ОК</button>
-                    </div>
+              <div className="edge-editor-content">
+                  <span className="close-button" onClick={handleClose}>
+                      &times;
+                  </span>
+                  <h3>Редактор ребра</h3>
+          
+                  <div className="input-group">
+                      <label>Вес ребра:</label>
+                      <input 
+                          type="text" 
+                          value={edgeWeight} 
+                          onChange={handleWeightChange} 
+                          placeholder="Введите вес" 
+                      />
+                  </div>
+          
+                  <div className="radio-group">
+                      <label>Ориентированный:</label>
+                      <input 
+                          type="radio" 
+                          name="direction" 
+                          value="directed" 
+                          defaultChecked 
+                          onChange={() => setIsDirected(false)} 
+                      />
+                  </div>
+          
+                  <div className="radio-group">
+                      <label>Неориентированный:</label>
+                      <input 
+                          type="radio" 
+                          name="direction" 
+                          value="undirected" 
+                          onChange={() => setIsDirected(true)} 
+                      />
+                  </div>
+                  <button className="ok-button" onClick={handleOkClick}>ОК</button>
               </div>
+          </div>
+          
           )}
             <svg
                 ref={svgRef}
