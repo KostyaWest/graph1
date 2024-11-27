@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './graph.css';
 import './edgeconfig.css'
+import './matrixwind.css'
 
 const App = () => {
     const [nodes, setNodes] = useState([]);
@@ -8,6 +9,9 @@ const App = () => {
     const [lastNodeId, setLastNodeId] = useState(0);
 
     const [deletingNode, setDeletingNode] = useState(false);
+
+    const [showadjMatrix, setShowadjMatrix] = useState(false); // Состояние для отображения модального окна
+    const [adjmatrix, setadjMatrix] = useState([]); // Состояние для хранения матрицы смежности
 
     const [edges, setEdges] = useState([]);
     const [addingEdge, setAddingEdge] = useState(false);
@@ -186,7 +190,7 @@ const App = () => {
     setEdgeWeight("0");
 };
 
-const neorient = () => {
+    const neorient = () => {
     console.log("2");
     if (selectedNode && secondNode) {
         if (selectedNode.id === secondNode.id) {
@@ -287,6 +291,36 @@ const neorient = () => {
         setMessage("Ребро не создано.");
     };
 
+    const openadjMatrixModal = () => {
+        // Вычисление матрицы смежности
+        calculateadjMatrix(); // Рассчитываем матрицу смежности
+        // Открытие модального окна с матрицей
+        setShowadjMatrix(true); // Устанавливаем флаг для показа модального окна
+    };
+    
+    
+    const calculateadjMatrix = () => {
+        const matrixSize = nodes.length;
+        const matrix = Array(matrixSize).fill(null).map(() => Array(matrixSize).fill(0));
+    
+        edges.forEach(edge => {
+            const startIdx = nodes.findIndex(node => node.id === edge.start.id);
+            const endIdx = nodes.findIndex(node => node.id === edge.end.id);
+    
+            if (startIdx !== -1 && endIdx !== -1) {
+                matrix[startIdx][endIdx] = edge.weight; // Устанавливаем 1 для существующего ребра
+            }
+        });
+    
+        setadjMatrix(matrix); // Обновляем состояние матрицы
+        console.log("Adjacency Matrix updated:", matrix);
+    };
+
+    const handlematrixClose = () => {
+        // Закрываем модальное окно и сбрасываем вес ребра
+        setShowadjMatrix(false);
+    };
+
     // Отображение графа
     const renderGraph = () => {
         return (
@@ -353,69 +387,80 @@ const neorient = () => {
                 <button className="button" onClick={startAddingNode}>Добавить узел</button>
                 <button className="button" onClick={startDeletingNode}>Удалить узел</button>
                 <button className="button" onClick={startAddingEdge}>Соединить узлы</button>
-                <button className="button">Алгоритмы</button>
-            </div>
+                <button className="button">Алгоритм Деикстры</button>
+                <button className="button" onClick={openadjMatrixModal}>Вывести матрицу смежности</button>
+            </div>        
             <div className="message-box">{message}</div>
-            {showEdgeEditor && (
-              <div className="edge-editor-modal">
-              <div className="edge-editor-content">
-                  <span className="close-button" onClick={handleClose}>
-                      &times;
-                  </span>
-                  <h3>Редактор ребра</h3>
-          
-                  <div className="input-group">
-                      <label>Вес ребра:</label>
-                      <input 
-                          type="text" 
-                          value={edgeWeight} 
-                          onChange={handleWeightChange} 
-                          placeholder="Введите вес" 
-                      />
-                  </div>
-          
-                  <div className="radio-group">
-                      <label>Ориентированный:</label>
-                      <input 
-                          type="radio" 
-                          name="direction" 
-                          value="directed" 
-                          defaultChecked 
-                          onChange={() => setIsDirected(false)} 
-                      />
-                  </div>
-          
-                  <div className="radio-group">
-                      <label>Неориентированный:</label>
-                      <input 
-                          type="radio" 
-                          name="direction" 
-                          value="undirected" 
-                          onChange={() => setIsDirected(true)} 
-                      />
-                  </div>
-                  <button className="ok-button" onClick={handleOkClick}>ОК</button>
-              </div>
-          </div>
-          
-          )}
-            <svg
-                ref={svgRef}
-                className="graph-container"
-                onClick={handleClick}
-                width="800"
-                height="600"
-            >
-                {renderGraph()}
-            </svg>
-            <div className="message-box-nodes">
-                {nodes.map(node => node.id).join(', ')}
+                {showEdgeEditor && (
+                    <div className="edge-editor-modal">
+                    <div className="edge-editor-content">
+                    <span className="close-button" onClick={handleClose}>&times;</span>
+                <h3>Редактор ребра</h3>
+                <div className="input-group">
+                <label>Вес ребра:</label>
+                <input 
+                type="text" 
+                value={edgeWeight} 
+                onChange={handleWeightChange} 
+                placeholder="Введите вес" 
+                />
             </div>
-            <div className="message-box-edges">
-                {edges.map(edge => `${edge.start.id} => ${edge.end.id} (Вес: ${edge.weight})`).join(', ')}
+            <div className="radio-group">
+                <label>Ориентированный:</label>
+                <input 
+                type="radio" 
+                name="direction" 
+                value="directed" 
+                defaultChecked 
+                onChange={() => setIsDirected(false)} 
+                />
             </div>
-
+            <div className="radio-group">
+                <label>Неориентированный:</label>
+                <input 
+                type="radio" 
+                name="direction" 
+                value="undirected" 
+                onChange={() => setIsDirected(true)} 
+                />
+            </div>
+            <button className="ok-button" onClick={handleOkClick}>ОК</button>
+        </div>
+    </div>
+    )}
+    <svg
+    ref={svgRef}
+    className="graph-container"
+    onClick={handleClick}
+    width="800"
+    height="600"
+    >
+        {renderGraph()}
+    </svg>
+    <div className="message-box-nodes"> {nodes.map(node => node.id).join(', ')} </div>
+    <div className="message-box-edges"> {edges.map(edge => `${edge.start.id} => ${edge.end.id} (Вес: ${edge.weight})`).join(', ')} </div>
+    {/* Модальное окно для матрицы смежности */}
+    {showadjMatrix && (
+                <div className="adjacency-matrix-modal">
+                    <div className="adjacency-matrix-content">
+                        <span className="close-button-matrix" onClick={handlematrixClose}>&times;</span>
+                        <h3>Матрица смежности</h3>
+                        <table>
+                            <tbody>
+                                {adjmatrix.map((row, rowIndex) => (
+                                    <tr key={rowIndex}>
+                                        {row.map((value, colIndex) => (
+                                            <td key={colIndex}>{value}</td>
+                                        ))}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
+
 export default App;
