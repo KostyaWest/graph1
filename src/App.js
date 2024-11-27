@@ -47,6 +47,7 @@ const App = () => {
         setDeletingNode(false);
         setAddingEdge(false);
         setAddingNode(true);
+        setMessage("Постройте узел, кликнув по рабочей поверхности");
     };
 
     // Функция для добавления узла
@@ -94,132 +95,155 @@ const App = () => {
     };
 
     const deleteNode = (nId) => {                    
-        if (deletingNode) {
-            setNodes(prevNodes => prevNodes.filter(n => n.id !== nId));
-            setEdges(prevEdges => prevEdges.filter(edge => edge.start.id !== nId && edge.end.id !== nId));
-            setMessage("Вы удалили узел и его ребра");
-            setDeletingNode(false);
-            }   
-        }
-    
+    if (deletingNode) {
+        setNodes(prevNodes => prevNodes.filter(n => n.id !== nId));
+        setEdges(prevEdges => prevEdges.filter(edge => edge.start.id !== nId && edge.end.id !== nId));
+        setMessage("Вы удалили узел и его ребра");
+        setDeletingNode(false);
+        }   
+    }
+
 
     // Добавляем обработчик для клика по рабочей зоне
     const handleCanvasClick = (e) => {
         handleClick(e); // Вызов основной функции для обработки кликов
     };
-    
-    const handleNodeClick = (node) => {
-        if (deletingNode) {
-            deleteNode(node.id);
+
+const handleNodeClick = (node) => {
+    if (deletingNode) {
+        deleteNode(node.id);
+    }
+    else if (addingEdge) {
+        // Логируем состояние первого узла при клике в режиме "Соединить рёбер"
+        if (!selectedNode) {
+            setSelectedNode(node);
+            setMessage("Теперь выберите второй узел.");
+        } 
+        else if (selectedNode && !secondNode) {
+            setSecondNode(node);
+            setShowEdgeEditor(true); // Показать модальное окно
+        } else {
+            // Если оба узла уже выбраны, сбрасываем всё
+            setSelectedNode(node);
+            setSecondNode(null);
+            setShowEdgeEditor(false);
+            setMessage("Выберите первый узел.");
         }
-        else if (addingEdge) {
-            // Логируем состояние первого узла при клике в режиме "Соединить рёбер"
+    }
+    else if (deijalg) {
             if (!selectedNode) {
                 setSelectedNode(node);
-                setMessage("Теперь выберите второй узел.");
-            } 
-            else if (selectedNode && !secondNode) {
+                setMessage("Теперь выберите второй узел");
+            } else if (selectedNode && !secondNode) {
                 setSecondNode(node);
-                setShowEdgeEditor(true); // Показать модальное окно
+                deijcalсulate(selectedNode, node); // Запуск вычисления
             } else {
                 // Если оба узла уже выбраны, сбрасываем всё
                 setSelectedNode(node);
                 setSecondNode(null);
-                setShowEdgeEditor(false);
                 setMessage("Выберите первый узел.");
             }
         }
-        else if (deijalg) {
-                if (!selectedNode) {
-                    setSelectedNode(node);
-                    setMessage("Теперь выберите второй узел");
-                } else if (selectedNode && !secondNode) {
-                    setSecondNode(node);
-                    deijcalсulate(selectedNode, node); // Запуск вычисления
-                } else {
-                    // Если оба узла уже выбраны, сбрасываем всё
-                    setSelectedNode(node);
-                    setSecondNode(null);
-                    setMessage("Выберите первый узел.");
-                }
+    };
+
+    const buildAdjacencyList = () => {
+        const adjacencyList = {};
+        edges.forEach(edge => {
+            if (!adjacencyList[edge.start.id]) {
+                adjacencyList[edge.start.id] = [];
             }
-        };
+            adjacencyList[edge.start.id].push({ node: edge.end, weight: edge.weight });
+            
+            // Если граф неориентированный
+            if (!isDirected) {
+                if (!adjacencyList[edge.end.id]) {
+                    adjacencyList[edge.end.id] = [];
+                }
+                adjacencyList[edge.end.id].push({ node: edge.start, weight: edge.weight });
+            }
+        });
+        return adjacencyList;
+    };
     
-        const deijcalсulate = (startNode, endNode) => {
-            console.log("попал в вычисление деикстры");
-        
-            const distances = {};
-            const previousNodes = {};
-            const unvisitedNodes = new Set(nodes);
-        
-            nodes.forEach(node => {
-                distances[node.id] = Infinity;
-                previousNodes[node.id] = null;
-            });
-        
-            distances[startNode.id] = 0;
-        
-            while (unvisitedNodes.size > 0) {
-                const currentNode = getClosestNode(unvisitedNodes, distances);
-                unvisitedNodes.delete(currentNode);
-        
-                if (currentNode.id === endNode.id) {
-                    const path = [];
-                    const edgesInPath = [];
-                    let totalWeight = 0; // Переменная для хранения общего веса
-                    let current = currentNode;
-        
-                    // Восстанавливаем путь и считаем общий вес
-                    while (previousNodes[current.id]) {
-                        path.push(current);
-                        const edge = edges.find(edge =>
-                            (edge.start.id === previousNodes[current.id].id && edge.end.id === current.id) ||
-                            (edge.end.id === previousNodes[current.id].id && edge.start.id === current.id)
-                        );
-                        if (edge) {
-                            edgesInPath.push(edge);
-                            totalWeight += edge.weight; // Суммируем вес рёбер
-                        }
-                        current = previousNodes[current.id];
+    // Вызов функции при инициализации
+    const adjacencyList = buildAdjacencyList();
+    
+    const deijcalсulate = (startNode, endNode) => {
+    
+        const distances = {};
+        const previousNodes = {};
+        const unvisitedNodes = new Set(nodes);
+    
+        nodes.forEach(node => {
+            distances[node.id] = Infinity;
+            previousNodes[node.id] = null;
+        });
+    
+        distances[startNode.id] = 0;
+    
+        while (unvisitedNodes.size > 0) {
+            const currentNode = getClosestNode(unvisitedNodes, distances);
+            unvisitedNodes.delete(currentNode);
+    
+            if (currentNode.id === endNode.id) {
+                const path = [];
+                const edgesInPath = [];
+                let totalWeight = 0; // Переменная для хранения общего веса
+                let current = currentNode;
+    
+                // Восстанавливаем путь и считаем общий вес
+                while (previousNodes[current.id]) {
+                    path.push(current);
+                    const edge = edges.find(edge =>
+                        (edge.start.id === previousNodes[current.id].id && edge.end.id === current.id) ||
+                        (edge.end.id === previousNodes[current.id].id && edge.start.id === current.id)
+                    );
+                    if (edge) {
+                        edgesInPath.push(edge);
+                        totalWeight += edge.weight; // Суммируем вес рёбер
                     }
-        
-                    path.push(startNode);
-                    path.reverse();
-        
-                    const pathString = path.map(node => node.id).join(' -> ');
-                    const edgesString = edgesInPath.length > 0 ?
-                        edgesInPath.map(edge => `${edge.start.id} -> ${edge.end.id} (Вес: ${edge.weight})`).join(', ') :
-                        'Нет рёбер';
-        
-                    setMessage(`Кратчайший путь от вершины '${startNode.id}' до вершины '${endNode.id}': ${pathString}. Общий вес: ${totalWeight}. Подробнее: ${edgesString}.`);
-                    return; // Выход из функции
+                    current = previousNodes[current.id];
                 }
-        
-                const neighbors = edges.filter(edge => edge.start.id === currentNode.id || edge.end.id === currentNode.id);
-        
-                neighbors.forEach(neighbor => {
-                    const neighborNode = neighbor.start.id === currentNode.id ? neighbor.end : neighbor.start;
-                    const newDist = distances[currentNode.id] + neighbor.weight;
-        
-                    if (newDist < distances[neighborNode.id]) {
-                        distances[neighborNode.id] = newDist;
-                        previousNodes[neighborNode.id] = currentNode;
-                    }
-                });
+    
+                path.push(startNode);
+                path.reverse();
+    
+                const pathString = path.map(node => node.id).join(' -> ');
+                const edgesString = edgesInPath.length > 0 ?
+                    edgesInPath.map(edge => `${edge.start.id} -> ${edge.end.id} (Вес: ${edge.weight})`).join(', ') :
+                    'Нет рёбер';
+    
+                    setTimeout(() => {
+                        setDeijalg(false);
+                        setSelectedNode(null);
+                        setSecondNode(null);
+                    }, 700); // Задержка в миллисекундах
             }
-        
-            setMessage(`Нет пути от вершины '${startNode.id}' до вершины '${endNode.id}'.`); // Если путь не найден
-        };
-        
-        const getClosestNode = (unvisitedNodes, distances) => {
-            return [...unvisitedNodes].reduce((closestNode, node) => {
-                if (distances[node.id] < distances[closestNode.id]) {
-                    return node;
+    
+            const neighbors = edges.filter(edge => edge.start.id === currentNode.id || edge.end.id === currentNode.id);
+    
+            neighbors.forEach(neighbor => {
+                const neighborNode = neighbor.start.id === currentNode.id ? neighbor.end : neighbor.start;
+                const newDist = distances[currentNode.id] + neighbor.weight;
+    
+                if (newDist < distances[neighborNode.id]) {
+                    distances[neighborNode.id] = newDist;
+                    previousNodes[neighborNode.id] = currentNode;
                 }
-                return closestNode;
             });
-        };
-        
+        }
+        setMessage(`Нет пути от вершины '${startNode.id}' до вершины '${endNode.id}'.`);
+    };
+    
+    const getClosestNode = (unvisitedNodes, distances) => {
+        return [...unvisitedNodes].reduce((closestNode, node) => {
+            if (distances[node.id] < distances[closestNode.id]) {
+                return node;
+            }
+            return closestNode;
+        });
+    };
+    
     // Обработчик изменения веса ребра
     const handleWeightChange = (e) => {
         const value = e.target.value;
@@ -232,95 +256,141 @@ const App = () => {
     };
 
     const orient = () => {
-        if (selectedNode && secondNode) {
-        if (selectedNode.id === secondNode.id) {
-            // Ребро типа a -> a (одинаковые узлы)
-            if (edgeWeight === null) {
-                setMessage("Вес ребра не может быть null.");
-                setSelectedNode(null);
-                setSecondNode(null);
-                setShowEdgeEditor(false);
-                setEdgeWeight(null);
-                return;
-            }
-
-            const edgeExists = edges.some(edge => edge.start.id === selectedNode.id && edge.end.id === selectedNode.id);
-            
-            if (edgeExists) {
-                setMessage("Ребро типа a -> a уже существует.");
-                setSelectedNode(null);
-                setSecondNode(null);
-                setShowEdgeEditor(false);
-                setEdgeWeight(null); // сбросим вес
-                return;
-            }
-            
-            // Если ребро не существует, создаем ребро a -> a
-            const newEdge = {
-                id: `${selectedNode.id}-${secondNode.id}`, // Идентификатор для ребра a -> a
-                start: selectedNode,
-                end: secondNode,
-                weight: edgeWeight ? parseFloat(edgeWeight) : 0,
-            };
-
-            setEdges(prevEdges => [...prevEdges, newEdge]); // Добавляем новое ребро в список рёбер
-            setMessage("Ребро a -> a создано.");
-        } else {
-            // Ребро между разными узлами (a -> b)
-            const edgeId1 = `${selectedNode.id}-${secondNode.id}`;
-            
-            if (edgeWeight === null) {
-                setMessage("Вес ребра не может быть null.");
-                setSelectedNode(null);
-                setSecondNode(null);
-                setShowEdgeEditor(false);
-                setEdgeWeight(null);
-                return;
-            }
-
-            // Проверяем оба направления (a -> b и b -> a)
-            const edgeExists = edges.some(edge => edge.id === edgeId1);
-            
-            if (edgeWeight === null) {
-                setMessage("Вес ребра не может быть null.");
-                setSelectedNode(null);
-                setSecondNode(null);
-                setShowEdgeEditor(false);
-                setEdgeWeight(null);
-                return;
-            }
-            
-            if (edgeExists) {
-                setMessage("Ребро между этими узлами уже существует.");
-                setSelectedNode(null);
-                setSecondNode(null);
-                setShowEdgeEditor(false);
-                setEdgeWeight(null);
-                return;
-            }
-
-            // Если ребро не существует, создаем новое ребро
-            const newEdge = {
-                id: edgeId1, // Используем идентификатор для a -> b
-                start: selectedNode,
-                end: secondNode,
-                weight: edgeWeight ? parseFloat(edgeWeight) : 0,
-            };
-            setEdges(prevEdges => [...prevEdges, newEdge]); // Добавляем новое ребро в список рёбер
-            setMessage("Ребро между узлами создано.");
+    if (selectedNode && secondNode) {
+    if (selectedNode.id === secondNode.id) {
+        // Ребро типа a -> a (одинаковые узлы)
+        if (edgeWeight === null) {
+            setMessage("Вес ребра не может быть null.");
+            setSelectedNode(null);
+            setSecondNode(null);
+            setShowEdgeEditor(false);
+            setEdgeWeight(null);
+            return;
         }
+
+        const edgeExists = edges.some(edge => edge.start.id === selectedNode.id && edge.end.id === selectedNode.id);
+        
+        if (edgeExists) {
+            setMessage("Ребро типа a -> a уже существует.");
+            setSelectedNode(null);
+            setSecondNode(null);
+            setShowEdgeEditor(false);
+            setEdgeWeight(null); // сбросим вес
+            return;
+        }
+        
+        // Если ребро не существует, создаем ребро a -> a
+        const newEdge = {
+            id: `${selectedNode.id}-${secondNode.id}`, // Идентификатор для ребра a -> a
+            start: selectedNode,
+            end: secondNode,
+            weight: edgeWeight ? parseFloat(edgeWeight) : 0,
+        };
+
+        setEdges(prevEdges => [...prevEdges, newEdge]); // Добавляем новое ребро в список рёбер
+        setMessage("Ребро a -> a создано.");
+    } else {
+        // Ребро между разными узлами (a -> b)
+        const edgeId1 = `${selectedNode.id}-${secondNode.id}`;
+        
+        if (edgeWeight === null) {
+            setMessage("Вес ребра не может быть null.");
+            setSelectedNode(null);
+            setSecondNode(null);
+            setShowEdgeEditor(false);
+            setEdgeWeight(null);
+            return;
+        }
+
+        // Проверяем оба направления (a -> b и b -> a)
+        const edgeExists = edges.some(edge => edge.id === edgeId1);
+        
+        if (edgeWeight === null) {
+            setMessage("Вес ребра не может быть null.");
+            setSelectedNode(null);
+            setSecondNode(null);
+            setShowEdgeEditor(false);
+            setEdgeWeight(null);
+            return;
+        }
+        
+        if (edgeExists) {
+            setMessage("Ребро между этими узлами уже существует.");
+            setSelectedNode(null);
+            setSecondNode(null);
+            setShowEdgeEditor(false);
+            setEdgeWeight(null);
+            return;
+        }
+
+        // Если ребро не существует, создаем новое ребро
+        const newEdge = {
+            id: edgeId1, // Используем идентификатор для a -> b
+            start: selectedNode,
+            end: secondNode,
+            weight: edgeWeight ? parseFloat(edgeWeight) : 0,
+        };
+        setEdges(prevEdges => [...prevEdges, newEdge]); // Добавляем новое ребро в список рёбер
+        setMessage("Ребро между узлами создано.");
     }
-    // Сброс состояния после создания ребра
-    setSelectedNode(null);
-    setSecondNode(null);
-    setShowEdgeEditor(false);
-    setEdgeWeight("0");
-};
+}
+// Сброс состояния после создания ребра
+setSelectedNode(null);
+setSecondNode(null);
+setShowEdgeEditor(false);
+setEdgeWeight("0");
+    };
 
     const neorient = () => {
-    if (selectedNode && secondNode) {
-        if (selectedNode.id === secondNode.id) {
-            // Проверка, существует ли уже ребро типа a -> a (между одним и тем же узлом)
+if (selectedNode && secondNode) {
+    if (selectedNode.id === secondNode.id) {
+        // Проверка, существует ли уже ребро типа a -> a (между одним и тем же узлом)
+        if (edgeWeight === null) {
+            setMessage("Вес ребра не может быть null.");
+            setSelectedNode(null);
+            setSecondNode(null);
+            setShowEdgeEditor(false);
+            setEdgeWeight(null);
+            return;
+        }
+        const edgeExists = edges.some(edge => edge.start.id === selectedNode.id && edge.end.id === selectedNode.id);
+        
+        if (edgeExists) {
+            setMessage("Ребро типа a -> a уже существует.");
+            setSelectedNode(null);
+            setSecondNode(null);
+            setShowEdgeEditor(false);
+            setEdgeWeight(null);
+            return;
+        }
+
+        // Если ребро не существует, создаем ребро a -> a
+        const newEdge = {
+            id: `${selectedNode.id}-${secondNode.id}`, // Идентификатор для ребра a -> a
+            start: selectedNode,
+            end: secondNode,
+            weight: edgeWeight ? parseFloat(edgeWeight) : 0, // Вес ребра
+        };
+
+        setEdges(prevEdges => [...prevEdges, newEdge]); // Добавляем новое ребро в список рёбер
+        setMessage("Ребро a -> a создано.");
+    
+        
+        // Переключаем флаг isDirected на противоположный
+        setIsDirected(prev => !prev);
+
+        // Сброс состояния после добавления ребра
+        setSelectedNode(null);
+        setSecondNode(null);
+        setShowEdgeEditor(false);
+        setEdgeWeight(null);
+    }
+    else if (selectedNode.id !== secondNode.id) {
+            // Ребро между разными узлами a -> b
+            const edgeId1 = `${selectedNode.id}-${secondNode.id}`;  // a -> b
+            const edgeId2 = `${secondNode.id}-${selectedNode.id}`;  // b -> a
+
+            // Проверяем существование рёбер a -> b и b -> a
             if (edgeWeight === null) {
                 setMessage("Вес ребра не может быть null.");
                 setSelectedNode(null);
@@ -329,10 +399,10 @@ const App = () => {
                 setEdgeWeight(null);
                 return;
             }
-            const edgeExists = edges.some(edge => edge.start.id === selectedNode.id && edge.end.id === selectedNode.id);
+            const edgeExists = edges.some(edge => edge.id === edgeId1 || edge.id === edgeId2);
             
             if (edgeExists) {
-                setMessage("Ребро типа a -> a уже существует.");
+                setMessage("Одно из рёбер между этими узлами уже существует.");
                 setSelectedNode(null);
                 setSecondNode(null);
                 setShowEdgeEditor(false);
@@ -340,85 +410,39 @@ const App = () => {
                 return;
             }
 
-            // Если ребро не существует, создаем ребро a -> a
-            const newEdge = {
-                id: `${selectedNode.id}-${secondNode.id}`, // Идентификатор для ребра a -> a
+            // Если рёбер еще нет, создаем оба: a -> b и b -> a
+            const newEdge1 = {
+                id: edgeId1,  // Идентификатор для a -> b
                 start: selectedNode,
                 end: secondNode,
                 weight: edgeWeight ? parseFloat(edgeWeight) : 0, // Вес ребра
             };
 
-            setEdges(prevEdges => [...prevEdges, newEdge]); // Добавляем новое ребро в список рёбер
-            setMessage("Ребро a -> a создано.");
-        
+            const newEdge2 = {
+                id: edgeId2,  // Идентификатор для b -> a
+                start: secondNode,
+                end: selectedNode,
+                weight: edgeWeight ? parseFloat(edgeWeight) : 0, // Вес ребра
+            };
+
+            // Добавляем оба рёбер в список
+            setEdges(prevEdges => [...prevEdges, newEdge1, newEdge2]);  
+            setMessage("Рёбра между узлами a -> b и b -> a созданы.");
             
             // Переключаем флаг isDirected на противоположный
             setIsDirected(prev => !prev);
 
-            // Сброс состояния после добавления ребра
+            // Сброс состояния после добавления рёбер
             setSelectedNode(null);
             setSecondNode(null);
             setShowEdgeEditor(false);
             setEdgeWeight(null);
-        }
-        else if (selectedNode.id !== secondNode.id) {
-                // Ребро между разными узлами a -> b
-                const edgeId1 = `${selectedNode.id}-${secondNode.id}`;  // a -> b
-                const edgeId2 = `${secondNode.id}-${selectedNode.id}`;  // b -> a
-    
-                // Проверяем существование рёбер a -> b и b -> a
-                if (edgeWeight === null) {
-                    setMessage("Вес ребра не может быть null.");
-                    setSelectedNode(null);
-                    setSecondNode(null);
-                    setShowEdgeEditor(false);
-                    setEdgeWeight(null);
-                    return;
-                }
-                const edgeExists = edges.some(edge => edge.id === edgeId1 || edge.id === edgeId2);
-                
-                if (edgeExists) {
-                    setMessage("Одно из рёбер между этими узлами уже существует.");
-                    setSelectedNode(null);
-                    setSecondNode(null);
-                    setShowEdgeEditor(false);
-                    setEdgeWeight(null);
-                    return;
-                }
-    
-                // Если рёбер еще нет, создаем оба: a -> b и b -> a
-                const newEdge1 = {
-                    id: edgeId1,  // Идентификатор для a -> b
-                    start: selectedNode,
-                    end: secondNode,
-                    weight: edgeWeight ? parseFloat(edgeWeight) : 0, // Вес ребра
-                };
-    
-                const newEdge2 = {
-                    id: edgeId2,  // Идентификатор для b -> a
-                    start: secondNode,
-                    end: selectedNode,
-                    weight: edgeWeight ? parseFloat(edgeWeight) : 0, // Вес ребра
-                };
-    
-                // Добавляем оба рёбер в список
-                setEdges(prevEdges => [...prevEdges, newEdge1, newEdge2]);  
-                setMessage("Рёбра между узлами a -> b и b -> a созданы.");
-                
-                // Переключаем флаг isDirected на противоположный
-                setIsDirected(prev => !prev);
-    
-                // Сброс состояния после добавления рёбер
-                setSelectedNode(null);
-                setSecondNode(null);
-                setShowEdgeEditor(false);
-                setEdgeWeight(null);
-            }    
-        }
+        }    
+    }
     };
 
     const handleOkClick = () => {isDirected ? neorient() : orient();};
-    
+
     const handleClose = () => {
         // Сбрасываем выбранные узлы
         setSelectedNode(null);
@@ -436,7 +460,7 @@ const App = () => {
         // Открытие модального окна с матрицей
         setShowadjMatrix(true); // Устанавливаем флаг для показа модального окна
     };
-    
+
     const calculateadjMatrix = () => {
         const matrixSize = nodes.length;
         const matrix = Array(matrixSize).fill(null).map(() => Array(matrixSize).fill('-'));
@@ -499,8 +523,12 @@ const App = () => {
                             fill={
   
                                 // Узел будет красным, если он выбран в процессе добавления ребра
-                                (addingEdge && selectedNode && selectedNode.id === node.id) ? 'red' :
-                                (addingEdge && secondNode && secondNode.id === node.id) ? 'red' : 'blue'
+                            (addingEdge && selectedNode && selectedNode.id === node.id) ? 'red' :
+                            (addingEdge && secondNode && secondNode.id === node.id) ? 'red' :
+                            // Узел будет красным, если он выбран в процессе алгоритма Дейкстры
+                            (deijalg && selectedNode && selectedNode.id === node.id) ? 'red' :
+                            (deijalg && secondNode && secondNode.id === node.id) ? 'red' :
+                            'blue'
                             }
                         />
                         <text
