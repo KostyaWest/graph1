@@ -103,6 +103,7 @@ const App = () => {
                 setMessage("Теперь выберите второй узел.");
             } 
             else if (selectedNode && !secondNode) {
+                console.log("Выбран второй узел:", node); // Выводим второй узел
                 setSecondNode(node);
                 setShowEdgeEditor(true); // Показать модальное окно
                 setMessage("Введите вес для рёбер.");
