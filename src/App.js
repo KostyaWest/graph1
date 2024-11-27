@@ -22,8 +22,17 @@ const App = () => {
     const [secondNode, setSecondNode] = useState(null);     // Второй узел
     const [isDirected, setIsDirected] = useState(false); //флаг ориентированного ребра
 
+    const [deijalg, setDeijalg] = useState(false); //кнопка на деикстру
     const [message, setMessage] = useState("Нажмите на кнопку для дальнейших действий");
     const svgRef = useRef();
+
+    const startDeij = () => {
+        setDeletingNode(false);
+        setAddingNode(false);
+        setAddingEdge(false);
+        setDeijalg(true)
+        setMessage("Выберите первый из двух узлов для начала работы алгоритма");
+    }
 
     // Функция для начала добавления ориентированного ребра
     const startAddingEdge = () => {
@@ -120,19 +129,107 @@ const App = () => {
                 setMessage("Выберите первый узел.");
             }
         }
-    };
-
+        else if (deijalg) {
+                if (!selectedNode) {
+                    setSelectedNode(node);
+                    setMessage("Теперь выберите второй узел");
+                } else if (selectedNode && !secondNode) {
+                    setSecondNode(node);
+                    deijcalсulate(selectedNode, node); // Запуск вычисления
+                } else {
+                    // Если оба узла уже выбраны, сбрасываем всё
+                    setSelectedNode(node);
+                    setSecondNode(null);
+                    setMessage("Выберите первый узел.");
+                }
+            }
+        };
+    
+        const deijcalсulate = (startNode, endNode) => {
+            console.log("попал в вычисление деикстры");
+        
+            const distances = {};
+            const previousNodes = {};
+            const unvisitedNodes = new Set(nodes);
+        
+            nodes.forEach(node => {
+                distances[node.id] = Infinity;
+                previousNodes[node.id] = null;
+            });
+        
+            distances[startNode.id] = 0;
+        
+            while (unvisitedNodes.size > 0) {
+                const currentNode = getClosestNode(unvisitedNodes, distances);
+                unvisitedNodes.delete(currentNode);
+        
+                if (currentNode.id === endNode.id) {
+                    const path = [];
+                    const edgesInPath = [];
+                    let totalWeight = 0; // Переменная для хранения общего веса
+                    let current = currentNode;
+        
+                    // Восстанавливаем путь и считаем общий вес
+                    while (previousNodes[current.id]) {
+                        path.push(current);
+                        const edge = edges.find(edge =>
+                            (edge.start.id === previousNodes[current.id].id && edge.end.id === current.id) ||
+                            (edge.end.id === previousNodes[current.id].id && edge.start.id === current.id)
+                        );
+                        if (edge) {
+                            edgesInPath.push(edge);
+                            totalWeight += edge.weight; // Суммируем вес рёбер
+                        }
+                        current = previousNodes[current.id];
+                    }
+        
+                    path.push(startNode);
+                    path.reverse();
+        
+                    const pathString = path.map(node => node.id).join(' -> ');
+                    const edgesString = edgesInPath.length > 0 ?
+                        edgesInPath.map(edge => `${edge.start.id} -> ${edge.end.id} (Вес: ${edge.weight})`).join(', ') :
+                        'Нет рёбер';
+        
+                    setMessage(`Кратчайший путь от вершины '${startNode.id}' до вершины '${endNode.id}': ${pathString}. Общий вес: ${totalWeight}. Подробнее: ${edgesString}.`);
+                    return; // Выход из функции
+                }
+        
+                const neighbors = edges.filter(edge => edge.start.id === currentNode.id || edge.end.id === currentNode.id);
+        
+                neighbors.forEach(neighbor => {
+                    const neighborNode = neighbor.start.id === currentNode.id ? neighbor.end : neighbor.start;
+                    const newDist = distances[currentNode.id] + neighbor.weight;
+        
+                    if (newDist < distances[neighborNode.id]) {
+                        distances[neighborNode.id] = newDist;
+                        previousNodes[neighborNode.id] = currentNode;
+                    }
+                });
+            }
+        
+            setMessage(`Нет пути от вершины '${startNode.id}' до вершины '${endNode.id}'.`); // Если путь не найден
+        };
+        
+        const getClosestNode = (unvisitedNodes, distances) => {
+            return [...unvisitedNodes].reduce((closestNode, node) => {
+                if (distances[node.id] < distances[closestNode.id]) {
+                    return node;
+                }
+                return closestNode;
+            });
+        };
+        
     // Обработчик изменения веса ребра
     const handleWeightChange = (e) => {
         const value = e.target.value;
-
-    // Проверяем, является ли введенное значение числом
-    if (value === '' || isNaN(value)) {
-        setEdgeWeight(null);  // Если текст или пусто, устанавливаем null
-    } else {
-        setEdgeWeight(Number(value));  // Если число, преобразуем в число
-    }
-};
+        // Проверяем, является ли введенное значение числом
+        if (value === '' || isNaN(value)) {
+            setEdgeWeight(null);  // Если текст или пусто, устанавливаем null
+        } else {
+            setEdgeWeight(Number(value));  // Если число, преобразуем в число
+        }
+    };
 
     const orient = () => {
         if (selectedNode && secondNode) {
@@ -428,7 +525,7 @@ const App = () => {
                 <button className="button" onClick={startAddingNode}>Добавить узел</button>
                 <button className="button" onClick={startDeletingNode}>Удалить узел</button>
                 <button className="button" onClick={startAddingEdge}>Соединить узлы</button>
-                <button className="button">Алгоритм Деикстры</button>
+                <button className="button" onClick={startDeij}>Алгоритм Деикстры</button>
                 <button className="button" onClick={openadjMatrixModal}>Вывести матрицу смежности</button>
             </div>        
             <div className="message-box">{message}</div>
